@@ -1,0 +1,112 @@
+
+services:
+  db:
+    image: mysql:8.0
+    restart: always
+    container_name: mysql_service
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    # ports:
+    #   - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${MYSQL_USER}", "-p${MYSQL_PASSWORD}"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 20s
+    networks:
+      - video_net
+
+  auth_service:
+    build: ./auth_service
+    container_name: auth_service
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: ${MYSQL_HOST}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+    # ports:
+    #   - "5001:5001"
+    networks:
+      - video_net
+
+  file_service:
+    build: ./file_service
+    container_name: file_service
+    restart: always
+    # ports:
+    #   - "5002:5002"
+    volumes:
+      - ./storage/videos:/app/storage/videos
+    networks:
+      - video_net
+  
+
+  upload_app:
+    build: ./upload_app
+    container_name: upload_app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      auth_service:
+        condition: service_started
+      file_service:
+        condition: service_started
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: ${MYSQL_HOST}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      AUTH_URL: http://auth_service:5001/validate
+      AUTH_LOGIN_URL: http://auth_service:5001/login
+      FILE_URL: http://file_service:5002/upload
+    ports:
+      - "5000:5000"
+    networks:
+      - video_net
+
+
+  streaming_app:
+    build: ./streaming_app
+    container_name: streaming_app
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      auth_service:
+        condition: service_started
+      file_service:
+        condition: service_started
+    environment:
+      DB_HOST: ${MYSQL_HOST}
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      AUTH_URL: http://auth_service:5001/validate
+      AUTH_LOGIN_URL: http://auth_service:5001/login
+      FILE_BASE_URL: http://file_service:5002/files
+    ports:
+      - "5003:5003"
+    networks:
+      - video_net
+
+
+volumes:
+  mysql-data:
+
+networks:
+  video_net:
+    driver: bridge
