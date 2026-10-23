@@ -9,8 +9,6 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    # ports:
-    #   - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -36,21 +34,38 @@ services:
       DB_USER: ${MYSQL_USER}
       DB_PASSWORD: ${MYSQL_PASSWORD}
       DB_NAME: ${MYSQL_DATABASE}
-    # ports:
-    #   - "5001:5001"
     networks:
       - video_net
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 
   file_service:
     build: ./file_service
     container_name: file_service
     restart: always
-    # ports:
-    #   - "5002:5002"
     volumes:
       - ./storage/videos:/app/storage/videos
     networks:
       - video_net
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   
 
   upload_app:
@@ -61,9 +76,9 @@ services:
       db:
         condition: service_healthy
       auth_service:
-        condition: service_started
+        condition: service_healthy
       file_service:
-        condition: service_started
+        condition: service_healthy
     environment:
       JWT_SECRET: ${JWT_SECRET}
       DB_HOST: ${MYSQL_HOST}
@@ -87,9 +102,9 @@ services:
       db:
         condition: service_healthy
       auth_service:
-        condition: service_started
+        condition: service_healthy
       file_service:
-        condition: service_started
+        condition: service_healthy
     environment:
       DB_HOST: ${MYSQL_HOST}
       DB_USER: ${MYSQL_USER}
@@ -102,7 +117,6 @@ services:
       - "5003:5003"
     networks:
       - video_net
-
 
 volumes:
   mysql-data:
