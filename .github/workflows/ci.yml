@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth_service, file_service, upload_app, streaming_app]
+    env:
+      DB_HOST: localhost
+      DB_USER: test
+      DB_PASSWORD: test
+      DB_NAME: test
+      JWT_SECRET: test-secret-not-real
+      AUTH_URL: http://auth:5001/validate
+      AUTH_LOGIN_URL: http://auth:5001/login
+      FILE_URL: http://file:5002/upload
+      FILE_BASE_URL: http://file:5002/files
+      UPLOAD_FOLDER: /tmp/videos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps
+        working-directory: ${{ matrix.service }}
+        run: pip install -r requirements.txt pytest
+      - name: Run tests
+        working-directory: ${{ matrix.service }}
+        run: python -m pytest -q
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [auth_service, file_service, upload_app, streaming_app]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image name
+        run: echo "IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}/${{ matrix.service }}" >> "$GITHUB_ENV"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build (for scanning)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          load: true
+          tags: scan-target:local
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0  
+        with:
+          image-ref: scan-target:local
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "0"     
+          format: table
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compute tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build multi-arch and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.service }}
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
