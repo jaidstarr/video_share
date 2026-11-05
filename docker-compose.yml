@@ -90,6 +90,16 @@ services:
       FILE_URL: http://file_service:5002/upload
     ports:
       - "5000:5000"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - video_net
 
@@ -115,6 +125,16 @@ services:
       FILE_BASE_URL: http://file_service:5002/files
     ports:
       - "5003:5003"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - video_net
 
