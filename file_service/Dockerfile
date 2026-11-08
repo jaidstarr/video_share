@@ -7,10 +7,6 @@ FROM python:3.11-slim
 RUN useradd --create-home appuser
 WORKDIR /home/appuser/app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
-
 COPY --from=builder /root/.local /usr/local  
 COPY --chown=appuser:appuser . .
 

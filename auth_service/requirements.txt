@@ -2,3 +2,4 @@ Flask==3.0.3
 PyJWT
 mysql-connector-python
 gunicorn
+healthyurl

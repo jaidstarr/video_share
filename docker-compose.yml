@@ -42,7 +42,7 @@ services:
           cpus: '2'
           memory: 512M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
+      test: ["CMD", "healthyurl", "http://localhost:5001/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -62,7 +62,7 @@ services:
           cpus: '2'
           memory: 512M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      test: ["CMD", "healthyurl", "http://localhost:5002/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -96,7 +96,7 @@ services:
           cpus: '2'
           memory: 512M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      test: ["CMD", "healthyurl", "http://localhost:5000/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -131,7 +131,7 @@ services:
           cpus: '2'
           memory: 512M
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5003/health"]
+      test: ["CMD", "healthyurl", "http://localhost:5003/health"]
       interval: 10s
       timeout: 5s
       retries: 5
