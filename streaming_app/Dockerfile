@@ -15,4 +15,4 @@ RUN mkdir -p /app/storage/videos && chown -R appuser:appuser /app/storage
 USER appuser
 
 EXPOSE 5003
-CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5003", "--workers", "4"]
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5003", "--workers", "2", "--threads", "4"]

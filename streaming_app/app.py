@@ -3,6 +3,7 @@ import time
 import logging
 from functools import wraps
 from urllib.parse import quote
+from mysql.connector import pooling
 
 import requests
 import mysql.connector
@@ -11,6 +12,7 @@ from flask import (Flask, request, jsonify, redirect, Response,
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
+_pool = None
 
 DB_CONFIG = {
     "host": os.environ["DB_HOST"],
@@ -52,11 +54,16 @@ VIDEOS_HTML = """
 
 
 def get_db_connection(retries=5, delay=2):
+    global _pool
     for attempt in range(retries):
         try:
-            return mysql.connector.connect(**DB_CONFIG)
+            if _pool is None:
+                _pool = pooling.MySQLConnectionPool(
+                    pool_name="streaming", pool_size=5, **DB_CONFIG)
+            return _pool.get_connection()
         except mysql.connector.Error as err:
-            app.logger.warning("DB connect failed (%d/%d): %s", attempt + 1, retries, err)
+            app.logger.warning("DB connect failed (%d/%d): %s",
+                               attempt + 1, retries, err)
             if attempt == retries - 1:
                 raise
             time.sleep(delay)
