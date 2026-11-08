@@ -1,6 +1,6 @@
 # Video Share
 
-A containerized video upload and streaming system built for ACIT 3495 (Jaida Neilson).
+A containerized video upload and streaming system built for ACIT 3495.
 Users log in, upload videos through one web app, and stream them from another.
 Everything runs with Docker Compose.
 
