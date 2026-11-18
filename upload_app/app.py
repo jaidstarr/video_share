@@ -11,7 +11,7 @@ from flask import (Flask, request, jsonify, redirect,
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
-app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  # 500 MB
+app.config["MAX_CONTENT_LENGTH"] = 500 * 1024 * 1024  
 ALLOWED_EXTENSIONS = {".mp4", ".webm", ".mov", ".mkv"}
 
 DB_CONFIG = {
@@ -20,9 +20,9 @@ DB_CONFIG = {
     "password": os.environ["DB_PASSWORD"],
     "database": os.environ["DB_NAME"],
 }
-AUTH_URL = os.environ["AUTH_URL"]              # .../validate
-AUTH_LOGIN_URL = os.environ["AUTH_LOGIN_URL"]  # .../login
-FILE_URL = os.environ["FILE_URL"]              # .../upload
+AUTH_URL = os.environ["AUTH_URL"]             
+AUTH_LOGIN_URL = os.environ["AUTH_LOGIN_URL"] 
+FILE_URL = os.environ["FILE_URL"]             
 
 LOGIN_HTML = """
 <!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
@@ -43,6 +43,7 @@ HOME_HTML = """
 <p>Signed in as {{ user }} | <a href="/logout">Log out</a></p>
 <ul>
   <li><a href="{{ upload_url }}">Upload a video</a></li>
+  <li><a href="{{ view_url }}">Watch videos</a></li>
 </ul>
 </body></html>
 """
@@ -106,8 +107,7 @@ def health():
 
 
 def menu_urls():
-    host = request.host.split(":")[0]
-    return f"http://{host}:5000/upload", f"http://{host}:5003/videos"
+    return "/upload", "/videos"
 
 
 @app.route("/")
