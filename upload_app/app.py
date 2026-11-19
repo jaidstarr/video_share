@@ -43,7 +43,6 @@ HOME_HTML = """
 <p>Signed in as {{ user }} | <a href="/logout">Log out</a></p>
 <ul>
   <li><a href="{{ upload_url }}">Upload a video</a></li>
-  <li><a href="{{ view_url }}">Watch videos</a></li>
 </ul>
 </body></html>
 """
